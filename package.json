@@ -6,7 +6,8 @@
 	"scripts": {
 		"setup": "tsx scripts/setup.ts",
 		"prepare": "husky",
-		"dev": "DEV_MODE=true vite",
+		"dev": "cross-env DEV_MODE=true vite",
+		"dev:worker": "cross-env DEV_MODE=true node --loader tsx worker/index.ts",
 		"build": "tsc -b --incremental && vite build",
 		"typecheck": "tsc -b --incremental --noEmit",
 		"lint": "eslint .",
@@ -94,7 +95,7 @@
 		"diff": "^8.0.2",
 		"drizzle-orm": "^0.44.7",
 		"embla-carousel-react": "^8.6.0",
-		"esbuild": "^0.27.1",
+		"esbuild": "^0.27.7",
 		"eslint-import-resolver-typescript": "^4.4.4",
 		"eslint-plugin-import": "^2.32.0",
 		"fflate": "^0.8.2",
@@ -176,7 +177,6 @@
 		"useTabs": true
 	},
 	"overrides": {
-		"vite": "npm:rolldown-vite@latest",
 		"@cloudflare/containers": "^0.0.28"
 	}
 }
