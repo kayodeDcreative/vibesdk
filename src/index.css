@@ -1,8 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@plugin "@tailwindcss/typography";
 
 :root {
 	font-family: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
