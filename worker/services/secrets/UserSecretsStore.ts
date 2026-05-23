@@ -41,7 +41,7 @@ export class UserSecretsStore extends DurableObject<Env> {
 	/** Ticket manager for WebSocket authentication */
 	private ticketManager = new WsTicketManager();
 
-	constructor(ctx: DurableObjectState, env: Env) {
+	constructor(ctx: DurableObjectState<unknown>, env: Env) {
 		super(ctx, env);
 		ctx.blockConcurrencyWhile(async () => {
 			await this.initializeSchema();

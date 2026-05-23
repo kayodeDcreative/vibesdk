@@ -15,6 +15,7 @@ import type{
 	AppDetailsData,
 	AppStarToggleData,
 	GitCloneTokenData,
+	UserGitRepositoriesData,
 	UserAppsData,
 	ProfileUpdateData,
 	UserStatsData,
@@ -1006,6 +1007,16 @@ class ApiClient {
 		return this.request('/api/github-app/check-remote', {
 			method: 'POST',
 			body: data,
+		});
+	}
+
+	/**
+	 * Get user's connected Git repositories
+	 * Returns list of accessible repositories for selection
+	 */
+	async getUserGitRepositories(): Promise<ApiResponse<UserGitRepositoriesData>> {
+		return this.request<UserGitRepositoriesData>('/api/git/repositories', {
+			method: 'GET',
 		});
 	}
 

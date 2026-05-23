@@ -15,7 +15,7 @@ import { PhaseTimeline } from './components/phase-timeline';
 import { type DebugMessage } from './components/debug-panel';
 import { DeploymentControls } from './components/deployment-controls';
 import { useChat } from './hooks/use-chat';
-import { type ModelConfigsInfo, type BlueprintType, type PhasicBlueprint, SUPPORTED_IMAGE_MIME_TYPES, type ProjectType, type FileType } from '@/api-types';
+import { type ModelConfigsInfo, type BlueprintType, type PhasicBlueprint, SUPPORTED_IMAGE_MIME_TYPES, type ProjectType, type FileType, type GitRepository } from '@/api-types';
 import { featureRegistry } from '@/features';
 import { useFileContentStream } from './hooks/use-file-content-stream';
 import { logger } from '@/utils/logger';
@@ -27,6 +27,8 @@ import { useImageUpload } from '@/hooks/use-image-upload';
 import { useDragDrop } from '@/hooks/use-drag-drop';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { GitRepositorySelector } from '@/components/git-repository-selector';
+import { RepositoryInfoBanner } from '@/components/repository-info-banner';
 import { sendWebSocketMessage } from './utils/websocket-helpers';
 import { detectContentType, isDocumentationPath, isMarkdownFile } from './utils/content-detector';
 import { mergeFiles } from '@/utils/file-helpers';
@@ -181,6 +183,7 @@ export default function Chat() {
 
 	const [isResetDialogOpen, setIsResetDialogOpen] = useState(false);
 	const [isGitCloneModalOpen, setIsGitCloneModalOpen] = useState(false);
+	const [selectedRepository, setSelectedRepository] = useState<GitRepository | null>(null);
 
 	// Usage limits state
 	const { data: limitsData, loading: limitsLoading } = useLimitsContext();
@@ -675,6 +678,11 @@ export default function Chat() {
 					layout="position"
 					className="flex-1 shrink-0 flex flex-col basis-0 max-w-lg relative z-10 h-full min-h-0"
 				>
+					<RepositoryInfoBanner
+						repository={selectedRepository}
+						onClear={() => setSelectedRepository(null)}
+					/>
+
 					<div 
 					className={clsx(
 						'flex-1 overflow-y-auto min-h-0 chat-messages-scroll',
@@ -850,6 +858,13 @@ export default function Chat() {
 						</div>
 					</div>
 
+
+				<div className="px-4 py-3 border-t border-border-primary flex flex-col gap-3">
+					<GitRepositorySelector
+						selectedRepository={selectedRepository}
+						onRepositorySelect={setSelectedRepository}
+					/>
+				</div>
 
 				<ChatInput
 					newMessage={newMessage}

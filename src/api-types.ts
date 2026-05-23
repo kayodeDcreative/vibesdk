@@ -308,3 +308,23 @@ export type {
     GitHubExportOptions,
     GitHubExportResult,
 } from 'worker/services/github/types';
+
+// Git Repository Selection Types
+export interface GitRepository {
+    id: string;
+    name: string;
+    url: string;
+    isPrivate: boolean;
+    description?: string;
+    language?: string;
+    owner: {
+        name: string;
+        avatar?: string;
+    };
+}
+
+export interface UserGitRepositoriesData {
+    repositories: GitRepository[];
+    hasMore: boolean;
+    totalCount: number;
+}

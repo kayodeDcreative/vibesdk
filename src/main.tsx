@@ -5,8 +5,6 @@ import { initSentry } from './utils/sentry';
 
 import { routes } from './routes.ts';
 import './index.css';
-import ReactDOM from 'react-dom/client';
-import App from './App';
 
 // Initialize Sentry before rendering
 initSentry();
