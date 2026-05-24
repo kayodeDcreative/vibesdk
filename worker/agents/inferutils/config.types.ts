@@ -337,6 +337,16 @@ const MODELS_MASTER = {
             creditCost: 8, // $0.22
             contextSize: 262144, // 256K Context
         },
+    },
+    KIMI_2: {
+        id: 'workers-ai/moonshot-kimi-2-240516',
+        config: {
+            name: 'Kimi 2',
+            size: ModelSize.LARGE,
+            provider: 'workers-ai',
+            creditCost: 5,
+            contextSize: 128000,
+        }
     }
 } as const;
 

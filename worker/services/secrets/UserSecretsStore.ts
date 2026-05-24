@@ -522,6 +522,9 @@ export class UserSecretsStore extends DurableObject<Env> {
 			CREATE INDEX IF NOT EXISTS idx_secrets_type
 			ON secrets(secret_type) WHERE is_deleted = 0
 		`);
+
+		// Ensure we can handle Workers AI related secrets if needed in the future
+		// Currently mostly used for BYOK providers
 	}
 
 	private async scheduleCleanup(): Promise<void> {

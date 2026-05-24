@@ -26,6 +26,7 @@ import { getMaxToolCallingDepth, MAX_LLM_MESSAGES } from '../constants';
 import { executeToolCallsWithDependencies } from './toolExecution';
 import { CompletionDetector } from './completionDetection';
 import { createLogger } from '../../logger';
+import { runWorkersAI, runWorkersAIStructured } from './workers-ai';
 
 const logger = createLogger('Inference');
 
@@ -640,6 +641,23 @@ export async function infer<OutputSchema extends z.AnyZodObject>({
 
         // Remove [*.] from model name
         modelName = modelName.replace(/\[.*?\]/, '');
+
+        if (modelConfig.provider === 'workers-ai') {
+            if (schema) {
+                return await runWorkersAIStructured(env, modelName, messages, schema, {
+                    maxTokens,
+                    temperature,
+                    abortSignal,
+                }, toolCallContext);
+            } else {
+                return await runWorkersAI(env, modelName, messages, {
+                    maxTokens,
+                    temperature,
+                    stream,
+                    abortSignal,
+                }, toolCallContext);
+            }
+        }
 
         const client = new OpenAI({ apiKey, baseURL: baseURL, defaultHeaders });
         const schemaObj =
