@@ -1,4 +1,4 @@
-import { Message } from './common';
+import { Message, MessageRole } from './common';
 import { InferResponseString, InferResponseObject, InferError, AbortError, ToolCallContext } from './core';
 import { z } from 'zod';
 import { formatSchemaAsMarkdown } from './schemaFormatters';
@@ -32,7 +32,7 @@ export async function runWorkersAI(
 
     if (toolCallContext?.messages) {
         workersAiMessages.push(...toolCallContext.messages.map(msg => ({
-            role: msg.role as string,
+            role: msg.role as MessageRole,
             content: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content)
         })));
     }
@@ -58,6 +58,9 @@ export async function runWorkersAI(
 
             try {
                 while (true) {
+                    if (options.abortSignal?.aborted) {
+                        throw new AbortError('**User cancelled inference**', toolCallContext);
+                    }
                     const { done, value } = await reader.read();
                     if (done) break;
 
@@ -99,6 +102,8 @@ export async function runWorkersAI(
                 messages: workersAiMessages,
                 max_tokens: options.maxTokens,
                 temperature: options.temperature,
+            }, {
+                signal: options.abortSignal
             }) as any;
 
             const content = response.response || '';

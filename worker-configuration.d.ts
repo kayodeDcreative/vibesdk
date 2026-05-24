@@ -6,12 +6,12 @@ declare namespace Cloudflare {
 		durableNamespaces: "CodeGeneratorAgent" | "UserAppSandboxService" | "DORateLimitStore";
 	}
 	interface Env {
-		VibecoderStore: KVNamespace;
-		TEMPLATES_REPOSITORY: "https://github.com/cloudflare/vibesdk-templates";
+		VibecoderWorkerStore: KVNamespace;
+		TEMPLATES_REPOSITORY: "https://github.com/cloudflare/vibesdkworker-templates";
 		ALLOWED_EMAIL: "";
-		DISPATCH_NAMESPACE: "vibesdk-default-namespace";
+		DISPATCH_NAMESPACE: "vibesdkworker-namespace";
 		ENABLE_READ_REPLICAS: "true";
-		CLOUDFLARE_AI_GATEWAY: "vibesdk-gateway";
+		CLOUDFLARE_AI_GATEWAY: "vibesdkworker-gateway";
 		PLATFORM_CAPABILITIES: {"features":{"app":{"enabled":true},"presentation":{"enabled":false},"general":{"enabled":false}},"version":"1.0.0"};
 		ANTHROPIC_API_KEY: string;
 		OPENAI_API_KEY: string;

@@ -486,7 +486,7 @@ Cloudflare VibeSDK implements enterprise-grade security:
 - **With AI Gateway Token**: The deployment script should automatically create the gateway. Check that your token has Read, Edit, and **Run** permissions.
 - **Without AI Gateway Token**: You must manually create an AI Gateway before deployment:
   1. Go to [AI Gateway Dashboard](https://dash.cloudflare.com/ai/ai-gateway)
-  2. Create gateway named `vibesdk-gateway` (or your custom name)
+  2. Create gateway named `vibesdkworker-gateway` (or your custom name)
   3. Enable authentication and create a token with **Run** permissions
 
 **🏗️ "Container Instance Type Issues"**

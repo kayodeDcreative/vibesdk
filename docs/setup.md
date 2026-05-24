@@ -180,9 +180,9 @@ CUSTOM_DOMAIN="your-domain.com"
 ### 3. Create Cloudflare Resources
 
 Create required resources in your Cloudflare account:
-- KV Namespace for `VibecoderStore`
-- D1 Database named `vibesdk-db`
-- R2 Bucket named `vibesdk-templates`
+- KV Namespace for `VibecoderWorkerStore`
+- D1 Database named `vibesdkworker-db`
+- R2 Bucket named `vibesdkworker-templates`
 
 ### 4. Update `wrangler.jsonc`
 

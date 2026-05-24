@@ -45,6 +45,6 @@ export class KVCache {
 }
 
 export function createKVCache(env: Env): KVCache {
-    const kv = env.VibecoderStore;
+    const kv = env.VibecoderWorkerStore;
     return new KVCache(kv);
 }

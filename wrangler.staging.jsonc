@@ -5,7 +5,7 @@
  *
  * Resource sharing with prod:
  *  - Templates R2 bucket (read-only static assets)
- *  - AI Gateway (`vibesdk-gateway`) and its token
+ *  - AI Gateway (`vibesdkworker-gateway`) and its token
  * Everything else (worker, D1, KV, dispatch namespace, routes) is isolated.
  */
  {
@@ -82,7 +82,7 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "vibesdk-db-staging",
+			"database_name": "vibesdkworker-db-staging",
 			"database_id": "5c6e594f-1655-4f12-95e9-92f541255864",
 			"migrations_dir": "migrations",
 			"remote": true
@@ -127,13 +127,13 @@
     "r2_buckets": [
       {
         "binding": "TEMPLATES_BUCKET",
-        "bucket_name": "vibesdk-templates",
+        "bucket_name": "vibesdkworker-templates",
         "remote": true
       }
     ],
     "kv_namespaces": [
         {
-            "binding": "VibecoderStore",
+            "binding": "VibecoderWorkerStore",
             "id": "e9367b2dce4740659642116c37bb052c",
             "remote": true
         }
@@ -183,11 +183,11 @@
         }
     ],
 	"vars": {
-        "TEMPLATES_REPOSITORY": "https://github.com/cloudflare/vibesdk-templates",
+        "TEMPLATES_REPOSITORY": "https://github.com/cloudflare/vibesdkworker-templates",
         "ALLOWED_EMAIL": "",
         "DISPATCH_NAMESPACE": "vibesdk-staging-namespace",
         "ENABLE_READ_REPLICAS": "true",
-        "CLOUDFLARE_AI_GATEWAY": "vibesdk-gateway",
+        "CLOUDFLARE_AI_GATEWAY": "vibesdkworker-gateway",
         "PLATFORM_CAPABILITIES": {
             "features": {
                 "app": {
