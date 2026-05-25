@@ -1,0 +1,68 @@
+/**
+ * Kimi AI Extension - Cloudflare Workers Configuration
+ * Standalone worker for AI code generation and analysis operations
+ */
+{
+  "name": "kimi-ai-worker",
+  "type": "service",
+  "main": "dist/index.js",
+  "compatibility_date": "2025-08-10",
+  "compatibility_flags": ["nodejs_compat"],
+
+  /**
+   * Build configuration
+   */
+  "build": {
+    "command": "npm run build",
+    "cwd": "./",
+    "watch_paths": ["src/**/*.ts"]
+  },
+
+  /**
+   * Environment-specific configuration
+   */
+  "env": {
+    "development": {
+      "name": "kimi-ai-worker-dev",
+      "routes": [
+        {
+          "pattern": "kimi-ai-dev.example.workers.dev/*",
+          "zone_name": "example.workers.dev"
+        }
+      ]
+    },
+    "production": {
+      "name": "kimi-ai-worker",
+      "routes": [
+        {
+          "pattern": "kimi-ai.example.workers.dev/*",
+          "zone_name": "example.workers.dev"
+        }
+      ]
+    }
+  },
+
+  /**
+   * Bindings for AI operations
+   */
+  "ai": {
+    "binding": "AI"
+  },
+
+  /**
+   * Environment variables
+   */
+  "vars": {
+    "ENVIRONMENT": "production",
+    "LOG_LEVEL": "info",
+    "API_TIMEOUT": "60000"
+  },
+
+  /**
+   * Observability
+   */
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

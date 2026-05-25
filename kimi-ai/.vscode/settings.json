@@ -1,0 +1,12 @@
+{
+	"kimi-ai.aiEndpoint": "https://kimi-ai-worker.khay.workers.dev",
+	"files.exclude": {
+		"out": false,
+		"dist": false
+	},
+	"search.exclude": {
+		"out": true,
+		"dist": true
+	},
+	"typescript.tsc.autoDetect": "off"
+}

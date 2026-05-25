@@ -1,0 +1,115 @@
+{
+  "name": "kimi-ai",
+  "displayName": "Kimi AI Code Generator",
+  "description": "AI-powered code generation and analysis using Kimi 2.6 via Moonshot API",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.120.0"
+  },
+  "categories": [
+    "Other",
+    "Formatters",
+    "Programming Languages"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "kimi-ai.generateCode",
+        "title": "Kimi AI: Generate Code",
+        "description": "Generate code from a natural language description"
+      },
+      {
+        "command": "kimi-ai.explainCode",
+        "title": "Kimi AI: Explain Code",
+        "description": "Get an explanation of the selected code"
+      },
+      {
+        "command": "kimi-ai.refactorCode",
+        "title": "Kimi AI: Refactor Code",
+        "description": "Refactor the selected code for better readability and performance"
+      },
+      {
+        "command": "kimi-ai.generateTests",
+        "title": "Kimi AI: Generate Tests",
+        "description": "Generate test cases for the selected code"
+      },
+      {
+        "command": "kimi-ai.configureApiKey",
+        "title": "Kimi AI: Configure API Key",
+        "description": "Set your Kimi API key for authentication"
+      },
+      {
+        "command": "kimi-ai.testConnection",
+        "title": "Kimi AI: Test Connection",
+        "description": "Test the connection to Kimi API"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "kimi-ai.generateCode",
+        "key": "ctrl+shift+k g",
+        "mac": "cmd+shift+k g"
+      },
+      {
+        "command": "kimi-ai.explainCode",
+        "key": "ctrl+shift+k e",
+        "mac": "cmd+shift+k e"
+      },
+      {
+        "command": "kimi-ai.refactorCode",
+        "key": "ctrl+shift+k r",
+        "mac": "cmd+shift+k r"
+      },
+      {
+        "command": "kimi-ai.generateTests",
+        "key": "ctrl+shift+k t",
+        "mac": "cmd+shift+k t"
+      }
+    ],
+    "configuration": {
+      "title": "Kimi AI",
+      "properties": {
+        "kimi-ai.aiEndpoint": {
+          "type": "string",
+          "default": "https://kimi-ai-worker.example.workers.dev",
+          "description": "Cloudflare Workers AI endpoint URL",
+          "markdownDescription": "URL of your deployed Kimi AI Cloudflare Worker (e.g., `https://kimi-ai-worker.example.workers.dev`)"
+        },
+        "kimi-ai.cloudflareWorkerUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Alternate name for the AI endpoint URL",
+          "markdownDescription": "Alternate configuration for the Cloudflare Workers endpoint URL"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
+  "dependencies": {
+    "axios": "^1.7.2"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.120.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "typescript-eslint": "^8.56.1",
+    "eslint": "^9.39.3",
+    "typescript": "^5.9.3",
+    "ts-loader": "^9.5.4",
+    "webpack": "^5.105.3",
+    "webpack-cli": "^6.0.1",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2"
+  }
+}

@@ -63,6 +63,18 @@ export type { PlatformStatusData } from 'worker/api/controllers/status/types';
 
 export type { CapabilitiesData } from 'worker/api/controllers/capabilities/types';
 
+// AI API Types
+export type {
+  GenerateCodeData,
+  ExplainCodeData,
+  RefactorCodeData,
+  GenerateTestsData,
+  CodeGenerationRequest,
+  CodeExplanationRequest,
+  CodeRefactoringRequest,
+  TestGenerationRequest,
+} from 'worker/api/controllers/ai/types';
+
 export type {
   ViewMode,
   FeatureCapabilities,
