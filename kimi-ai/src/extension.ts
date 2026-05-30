@@ -1,224 +1,281 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
 import { KimiService } from './kimiService';
 
 let kimiService: KimiService;
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+	console.log('Kimi AI Worker extension activated');
 
-	console.log('Congratulations, your extension "kimi-ai" is now active!');
-
-	// Initialize Kimi Service
 	kimiService = new KimiService();
 
-	// Command: Generate Code from Description
-	const generateCodeCommand = vscode.commands.registerCommand('kimi-ai.generateCode', async () => {
-		const prompt = await vscode.window.showInputBox({
-			placeHolder: 'Enter your code generation request...',
-			prompt: 'Describe the code you want to generate',
-		});
+	// ── Generate Code ──────────────────────────────────────────────────────────
+	context.subscriptions.push(
+		vscode.commands.registerCommand('kimi-ai.generateCode', async () => {
+			const editor = vscode.window.activeTextEditor;
 
-		if (!prompt) {
-			return;
-		}
+			// If there's a selection, use it as context; otherwise ask for a prompt
+			const selectedText = editor
+				? editor.document.getText(editor.selection)
+				: '';
 
-		const language = await vscode.window.showQuickPick(
-			['JavaScript', 'TypeScript', 'Python', 'Java', 'C++', 'C#', 'Go', 'Rust', 'PHP', 'Other'],
-			{ placeHolder: 'Select programming language' }
-		);
+			const prompt = await vscode.window.showInputBox({
+				placeHolder: 'e.g. A React hook that fetches paginated data',
+				prompt: 'Describe the code you want Kimi to generate',
+				value: selectedText || undefined,
+				ignoreFocusOut: true,
+			});
 
-		if (!language) {
-			return;
-		}
+			if (!prompt) { return; }
 
-		await withProgress('Generating code...', async () => {
-			try {
-				const result = await kimiService.generateCode({
-					prompt,
-					language,
-				});
+			const language = await vscode.window.showQuickPick(
+				['TypeScript', 'JavaScript', 'Python', 'Go', 'Rust', 'Java', 'C#', 'C++', 'PHP', 'Other'],
+				{ placeHolder: 'Select target language' }
+			);
 
-				// Open new file with generated code
-				const document = await vscode.workspace.openTextDocument({
-					language: language.toLowerCase(),
-					content: result.code,
-				});
+			if (!language) { return; }
 
-				const editor = await vscode.window.showTextDocument(document);
+			await withProgress('Kimi AI: Generating code…', async () => {
+				try {
+					const result = await kimiService.generateCode({
+						prompt,
+						language,
+						context: selectedText || undefined,
+					});
 
-				vscode.window.showInformationMessage('✅ Code generated successfully!');
-			} catch (error) {
-				vscode.window.showErrorMessage(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-			}
-		});
-	});
+					const doc = await vscode.workspace.openTextDocument({
+						language: languageId(language),
+						content: result.code,
+					});
 
-	// Command: Explain Selected Code
-	const explainCodeCommand = vscode.commands.registerCommand('kimi-ai.explainCode', async () => {
-		const editor = vscode.window.activeTextEditor;
-
-		if (!editor) {
-			vscode.window.showErrorMessage('No active editor');
-			return;
-		}
-
-		const selection = editor.selection;
-		const selectedText = editor.document.getText(selection);
-
-		if (!selectedText) {
-			vscode.window.showErrorMessage('No text selected');
-			return;
-		}
-
-		await withProgress('Analyzing code...', async () => {
-			try {
-				const explanation = await kimiService.explainCode(selectedText);
-
-				// Show explanation in output channel
-				const outputChannel = vscode.window.createOutputChannel('Kimi AI - Explanation');
-				outputChannel.clear();
-				outputChannel.appendLine('=== Code Explanation ===\n');
-				outputChannel.appendLine(explanation);
-				outputChannel.show();
-
-				vscode.window.showInformationMessage('✅ Explanation generated!');
-			} catch (error) {
-				vscode.window.showErrorMessage(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-			}
-		});
-	});
-
-	// Command: Refactor Selected Code
-	const refactorCodeCommand = vscode.commands.registerCommand('kimi-ai.refactorCode', async () => {
-		const editor = vscode.window.activeTextEditor;
-
-		if (!editor) {
-			vscode.window.showErrorMessage('No active editor');
-			return;
-		}
-
-		const selection = editor.selection;
-		const selectedText = editor.document.getText(selection);
-
-		if (!selectedText) {
-			vscode.window.showErrorMessage('No text selected');
-			return;
-		}
-
-		await withProgress('Refactoring code...', async () => {
-			try {
-				const refactoredCode = await kimiService.refactorCode(selectedText, editor.document.languageId);
-
-				// Replace selected text with refactored code
-				await editor.edit(editBuilder => {
-					editBuilder.replace(selection, refactoredCode);
-				});
-
-				vscode.window.showInformationMessage('✅ Code refactored successfully!');
-			} catch (error) {
-				vscode.window.showErrorMessage(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-			}
-		});
-	});
-
-	// Command: Generate Tests
-	const generateTestsCommand = vscode.commands.registerCommand('kimi-ai.generateTests', async () => {
-		const editor = vscode.window.activeTextEditor;
-
-		if (!editor) {
-			vscode.window.showErrorMessage('No active editor');
-			return;
-		}
-
-		const selection = editor.selection;
-		const selectedText = editor.document.getText(selection);
-
-		if (!selectedText) {
-			vscode.window.showErrorMessage('No text selected');
-			return;
-		}
-
-		await withProgress('Generating test cases...', async () => {
-			try {
-				const tests = await kimiService.generateTests(selectedText, editor.document.languageId);
-
-				// Open new file with test code
-				const document = await vscode.workspace.openTextDocument({
-					language: editor.document.languageId,
-					content: tests,
-				});
-
-				await vscode.window.showTextDocument(document);
-
-				vscode.window.showInformationMessage('✅ Test cases generated!');
-			} catch (error) {
-				vscode.window.showErrorMessage(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-			}
-		});
-	});
-
-	// Command: Configure Worker Endpoint
-	const configureKeyCommand = vscode.commands.registerCommand('kimi-ai.configureApiKey', async () => {
-		const config = vscode.workspace.getConfiguration('kimi-ai');
-		const currentEndpoint = config.get<string>('aiEndpoint', '');
-
-		const endpoint = await vscode.window.showInputBox({
-			placeHolder: 'e.g., https://kimi-ai-worker.example.workers.dev',
-			prompt: 'Enter your Cloudflare Worker endpoint URL',
-			value: currentEndpoint,
-		});
-
-		if (endpoint) {
-			await config.update('aiEndpoint', endpoint, vscode.ConfigurationTarget.Global);
-
-			// Update service with new endpoint
-			kimiService.updateEndpoint(endpoint);
-
-			vscode.window.showInformationMessage('✅ Worker endpoint configured successfully!');
-		}
-	});
-
-	// Command: Test API Connection
-	const testConnectionCommand = vscode.commands.registerCommand('kimi-ai.testConnection', async () => {
-		await withProgress('Testing connection...', async () => {
-			try {
-				const success = await kimiService.testConnection();
-				if (success) {
-					vscode.window.showInformationMessage('✅ Connection successful!');
-				} else {
-					vscode.window.showWarningMessage('⚠️ Connection test failed');
+					await vscode.window.showTextDocument(doc, { preview: false });
+					vscode.window.showInformationMessage('✅ Code generated by Kimi K2.6!');
+				} catch (err) {
+					handleError(err);
 				}
-			} catch (error) {
-				vscode.window.showErrorMessage(`❌ Connection error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-			}
-		});
-	});
+			});
+		})
+	);
 
-	// Register all commands
-	context.subscriptions.push(generateCodeCommand);
-	context.subscriptions.push(explainCodeCommand);
-	context.subscriptions.push(refactorCodeCommand);
-	context.subscriptions.push(generateTestsCommand);
-	context.subscriptions.push(configureKeyCommand);
-	context.subscriptions.push(testConnectionCommand);
-}
+	// ── Explain Code ───────────────────────────────────────────────────────────
+	context.subscriptions.push(
+		vscode.commands.registerCommand('kimi-ai.explainCode', async () => {
+			const code = getSelectedText();
+			if (!code) { return; }
 
-// Helper function to show progress
-async function withProgress(title: string, task: () => Promise<void>): Promise<void> {
-	await vscode.window.withProgress(
-		{
-			location: vscode.ProgressLocation.Notification,
-			title,
-			cancellable: false,
-		},
-		async () => {
-			await task();
-		}
+			await withProgress('Kimi AI: Analysing code…', async () => {
+				try {
+					const explanation = await kimiService.explainCode(code);
+					showInPanel('Kimi AI – Explanation', explanation);
+					vscode.window.showInformationMessage('✅ Explanation ready!');
+				} catch (err) {
+					handleError(err);
+				}
+			});
+		})
+	);
+
+	// ── Refactor Code ──────────────────────────────────────────────────────────
+	context.subscriptions.push(
+		vscode.commands.registerCommand('kimi-ai.refactorCode', async () => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor) { vscode.window.showErrorMessage('No active editor'); return; }
+
+			const selection = editor.selection;
+			const code = editor.document.getText(selection);
+			if (!code) { vscode.window.showErrorMessage('No text selected'); return; }
+
+			await withProgress('Kimi AI: Refactoring…', async () => {
+				try {
+					const refactored = await kimiService.refactorCode(code, editor.document.languageId);
+					await editor.edit(b => b.replace(selection, refactored));
+					vscode.window.showInformationMessage('✅ Code refactored!');
+				} catch (err) {
+					handleError(err);
+				}
+			});
+		})
+	);
+
+	// ── Generate Tests ─────────────────────────────────────────────────────────
+	context.subscriptions.push(
+		vscode.commands.registerCommand('kimi-ai.generateTests', async () => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor) { vscode.window.showErrorMessage('No active editor'); return; }
+
+			const code = editor.document.getText(editor.selection);
+			if (!code) { vscode.window.showErrorMessage('No text selected'); return; }
+
+			await withProgress('Kimi AI: Generating tests…', async () => {
+				try {
+					const tests = await kimiService.generateTests(code, editor.document.languageId);
+					const doc = await vscode.workspace.openTextDocument({
+						language: editor.document.languageId,
+						content: tests,
+					});
+					await vscode.window.showTextDocument(doc, { preview: false });
+					vscode.window.showInformationMessage('✅ Tests generated!');
+				} catch (err) {
+					handleError(err);
+				}
+			});
+		})
+	);
+
+	// ── Fix Bugs ───────────────────────────────────────────────────────────────
+	context.subscriptions.push(
+		vscode.commands.registerCommand('kimi-ai.fixBugs', async () => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor) { vscode.window.showErrorMessage('No active editor'); return; }
+
+			const selection = editor.selection;
+			const code = editor.document.getText(selection);
+			if (!code) { vscode.window.showErrorMessage('No text selected'); return; }
+
+			const errorMessage = await vscode.window.showInputBox({
+				placeHolder: 'Paste the error message (optional)',
+				prompt: 'Error message to help Kimi understand the bug',
+				ignoreFocusOut: true,
+			});
+
+			await withProgress('Kimi AI: Fixing bugs…', async () => {
+				try {
+					const fixed = await kimiService.fixBugs(code, editor.document.languageId, errorMessage);
+					await editor.edit(b => b.replace(selection, fixed));
+					vscode.window.showInformationMessage('✅ Bugs fixed!');
+				} catch (err) {
+					handleError(err);
+				}
+			});
+		})
+	);
+
+	// ── Add Documentation ──────────────────────────────────────────────────────
+	context.subscriptions.push(
+		vscode.commands.registerCommand('kimi-ai.addDocumentation', async () => {
+			const editor = vscode.window.activeTextEditor;
+			if (!editor) { vscode.window.showErrorMessage('No active editor'); return; }
+
+			const selection = editor.selection;
+			const code = editor.document.getText(selection);
+			if (!code) { vscode.window.showErrorMessage('No text selected'); return; }
+
+			await withProgress('Kimi AI: Adding documentation…', async () => {
+				try {
+					const documented = await kimiService.addDocumentation(code, editor.document.languageId);
+					await editor.edit(b => b.replace(selection, documented));
+					vscode.window.showInformationMessage('✅ Documentation added!');
+				} catch (err) {
+					handleError(err);
+				}
+			});
+		})
+	);
+
+	// ── Configure ──────────────────────────────────────────────────────────────
+	context.subscriptions.push(
+		vscode.commands.registerCommand('kimi-ai.configureApiKey', async () => {
+			const cfg = vscode.workspace.getConfiguration('kimi-ai');
+
+			const accountId = await vscode.window.showInputBox({
+				prompt: 'Enter your Cloudflare Account ID',
+				value: cfg.get<string>('cloudflareAccountId', ''),
+				ignoreFocusOut: true,
+				validateInput: v => (v ? null : 'Account ID is required'),
+			});
+			if (accountId === undefined) { return; }
+
+			const apiToken = await vscode.window.showInputBox({
+				prompt: 'Enter your Cloudflare Workers AI API Token',
+				value: cfg.get<string>('cloudflareApiToken', ''),
+				password: true,
+				ignoreFocusOut: true,
+				validateInput: v => (v ? null : 'API Token is required'),
+			});
+			if (apiToken === undefined) { return; }
+
+			const model = await vscode.window.showQuickPick(
+				[
+					{ label: '@cf/moonshotai/kimi-k2.6', description: 'Kimi K2.6 (recommended)' },
+					{ label: '@cf/moonshotai/kimi-k2.5', description: 'Kimi K2.5' },
+					{ label: '@cf/meta/llama-3.3-70b-instruct-fp8-fast', description: 'Llama 3.3 70B' },
+					{ label: '@cf/qwen/qwen2.5-coder-32b-instruct', description: 'Qwen 2.5 Coder 32B' },
+				],
+				{ placeHolder: 'Select Workers AI model' }
+			);
+			if (!model) { return; }
+
+			await cfg.update('cloudflareAccountId', accountId, vscode.ConfigurationTarget.Global);
+			await cfg.update('cloudflareApiToken', apiToken, vscode.ConfigurationTarget.Global);
+			await cfg.update('model', model.label, vscode.ConfigurationTarget.Global);
+
+			kimiService = new KimiService(); // reload with new config
+			vscode.window.showInformationMessage(`✅ Kimi AI configured with ${model.label}`);
+		})
+	);
+
+	// ── Test Connection ────────────────────────────────────────────────────────
+	context.subscriptions.push(
+		vscode.commands.registerCommand('kimi-ai.testConnection', async () => {
+			await withProgress('Kimi AI: Testing connection…', async () => {
+				try {
+					const ok = await kimiService.testConnection();
+					if (ok) {
+						vscode.window.showInformationMessage('✅ Connected to Kimi K2.6 via Cloudflare Workers AI!');
+					} else {
+						vscode.window.showWarningMessage('⚠️ Connection test returned an empty response.');
+					}
+				} catch (err) {
+					handleError(err);
+				}
+			});
+		})
 	);
 }
 
-// This method is called when your extension is deactivated
 export function deactivate() {}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+
+function getSelectedText(): string | undefined {
+	const editor = vscode.window.activeTextEditor;
+	if (!editor) { vscode.window.showErrorMessage('No active editor'); return undefined; }
+	const text = editor.document.getText(editor.selection);
+	if (!text) { vscode.window.showErrorMessage('No text selected'); return undefined; }
+	return text;
+}
+
+async function withProgress(title: string, task: () => Promise<void>): Promise<void> {
+	await vscode.window.withProgress(
+		{ location: vscode.ProgressLocation.Notification, title, cancellable: false },
+		async () => task()
+	);
+}
+
+function showInPanel(title: string, content: string): void {
+	const channel = vscode.window.createOutputChannel(title);
+	channel.clear();
+	channel.appendLine(content);
+	channel.show(true);
+}
+
+function handleError(err: unknown): void {
+	const msg = err instanceof Error ? err.message : String(err);
+	vscode.window.showErrorMessage(`❌ Kimi AI: ${msg}`);
+	console.error('[kimi-ai]', err);
+}
+
+function languageId(label: string): string {
+	const map: Record<string, string> = {
+		TypeScript: 'typescript',
+		JavaScript: 'javascript',
+		Python: 'python',
+		Go: 'go',
+		Rust: 'rust',
+		Java: 'java',
+		'C#': 'csharp',
+		'C++': 'cpp',
+		PHP: 'php',
+		Other: 'plaintext',
+	};
+	return map[label] ?? 'plaintext';
+}

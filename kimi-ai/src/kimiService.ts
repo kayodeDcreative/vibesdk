@@ -1,168 +1,289 @@
-import axios, { AxiosInstance } from 'axios';
 import * as vscode from 'vscode';
 
 export interface KimiCodeGenerationRequest {
-  prompt: string;
-  language?: string;
-  context?: string;
+	prompt: string;
+	language?: string;
+	context?: string;
 }
 
 export interface KimiCodeGenerationResponse {
-  code: string;
-  explanation?: string;
+	code: string;
+	explanation?: string;
 }
 
+interface WorkersAIMessage {
+	role: 'system' | 'user' | 'assistant';
+	content: string;
+}
+
+interface WorkersAIRequest {
+	messages: WorkersAIMessage[];
+	max_tokens?: number;
+	temperature?: number;
+	stream?: boolean;
+}
+
+interface WorkersAIResponse {
+	success: boolean;
+	result: {
+		response: string;
+	};
+	errors: Array<{ message: string }>;
+}
+
+/**
+ * KimiService - calls Cloudflare Workers AI directly using the REST API.
+ * Model: @cf/moonshotai/kimi-k2.6
+ */
 export class KimiService {
-  private client: AxiosInstance;
-  private workerUrl: string;
+	private accountId: string;
+	private apiToken: string;
+	private model: string;
+	private workerUrl: string; // fallback: custom Cloudflare Worker endpoint
 
-  constructor() {
-    const config = vscode.workspace.getConfiguration('kimi-ai');
-    this.workerUrl = config.get('cloudflareWorkerUrl') || 
-      config.get('aiEndpoint') ||
-      'https://vibesdk.example.workers.dev';
+	constructor() {
+		this.loadConfig();
+	}
 
-    this.client = axios.create({
-      baseURL: this.workerUrl,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      timeout: 60000, // Increase timeout for AI operations
-    });
-  }
+	private loadConfig(): void {
+		const config = vscode.workspace.getConfiguration('kimi-ai');
+		this.accountId = config.get<string>('cloudflareAccountId', '');
+		this.apiToken = config.get<string>('cloudflareApiToken', '');
+		this.model = config.get<string>('model', '@cf/moonshotai/kimi-k2.6');
+		this.workerUrl = config.get<string>('cloudflareWorkerUrl', '') ||
+			config.get<string>('aiEndpoint', '');
+	}
 
-  /**
-   * Generate code using Cloudflare Workers AI
-   */
-  async generateCode(request: KimiCodeGenerationRequest): Promise<KimiCodeGenerationResponse> {
-    if (!this.workerUrl) {
-      throw new Error('AI Worker endpoint not configured. Please set it in VS Code settings.');
-    }
+	/**
+	 * Returns the Workers AI REST endpoint for the configured model.
+	 */
+	private getWorkersAIUrl(): string {
+		return `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/ai/run/${this.model}`;
+	}
 
-    try {
-      const response = await this.client.post('/api/ai/generate-code', {
-        prompt: request.prompt,
-        language: request.language,
-        context: request.context,
-      });
+	/**
+	 * Core method: sends a chat request to Workers AI (Kimi K2.6).
+	 */
+	private async callWorkersAI(messages: WorkersAIMessage[], maxTokens = 8000, temperature = 0.7): Promise<string> {
+		this.loadConfig(); // always pick up latest settings
 
-      const data = response.data?.data || response.data;
-      
-      return {
-        code: data.code || '',
-        explanation: data.explanation || 'Code generated successfully',
-      };
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message;
-        throw new Error(`AI Service Error: ${error.response?.status} - ${errorMsg}`);
-      }
-      throw error;
-    }
-  }
+		// Prefer direct Workers AI if credentials are set
+		if (this.accountId && this.apiToken) {
+			const body: WorkersAIRequest = { messages, max_tokens: maxTokens, temperature };
 
-  /**
-   * Generate a detailed explanation for code
-   */
-  async explainCode(code: string): Promise<string> {
-    if (!this.workerUrl) {
-      throw new Error('AI Worker endpoint not configured.');
-    }
+			const response = await fetch(this.getWorkersAIUrl(), {
+				method: 'POST',
+				headers: {
+					'Authorization': `Bearer ${this.apiToken}`,
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(body),
+			});
 
-    try {
-      const response = await this.client.post('/api/ai/explain-code', {
-        code,
-      });
+			if (!response.ok) {
+				let errMsg = `HTTP ${response.status}`;
+				try {
+					const errData = await response.json() as { errors?: Array<{ message: string }> };
+					errMsg = errData.errors?.[0]?.message ?? errMsg;
+				} catch { /* ignore */ }
+				throw new Error(`Workers AI error: ${errMsg}`);
+			}
 
-      const data = response.data?.data || response.data;
-      return data.explanation || 'Code analysis complete';
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message;
-        throw new Error(`AI Service Error: ${error.response?.status} - ${errorMsg}`);
-      }
-      throw error;
-    }
-  }
+			const data = await response.json() as WorkersAIResponse;
 
-  /**
-   * Refactor code using AI
-   */
-  async refactorCode(code: string, language?: string): Promise<string> {
-    if (!this.workerUrl) {
-      throw new Error('AI Worker endpoint not configured.');
-    }
+			if (!data.success) {
+				throw new Error(data.errors?.[0]?.message ?? 'Workers AI returned an error');
+			}
 
-    try {
-      const response = await this.client.post('/api/ai/refactor-code', {
-        code,
-        language,
-      });
+			return data.result.response;
+		}
 
-      const data = response.data?.data || response.data;
-      return data.code || code;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message;
-        throw new Error(`AI Service Error: ${error.response?.status} - ${errorMsg}`);
-      }
-      throw error;
-    }
-  }
+		// Fallback: custom Cloudflare Worker endpoint
+		if (this.workerUrl) {
+			const response = await fetch(`${this.workerUrl}/api/ai/chat`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ messages, max_tokens: maxTokens, temperature }),
+			});
 
-  /**
-   * Generate test cases for code
-   */
-  async generateTests(code: string, language?: string): Promise<string> {
-    if (!this.workerUrl) {
-      throw new Error('AI Worker endpoint not configured.');
-    }
+			if (!response.ok) {
+				throw new Error(`Worker endpoint error: HTTP ${response.status}`);
+			}
 
-    try {
-      const response = await this.client.post('/api/ai/generate-tests', {
-        code,
-        language,
-      });
+			const data = await response.json() as { response?: string; result?: { response: string } };
+			return data.response ?? data.result?.response ?? '';
+		}
 
-      const data = response.data?.data || response.data;
-      return data.tests || code;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message;
-        throw new Error(`AI Service Error: ${error.response?.status} - ${errorMsg}`);
-      }
-      throw error;
-    }
-  }
+		throw new Error(
+			'Kimi AI is not configured. Run "Kimi AI: Configure" to set your Cloudflare credentials.'
+		);
+	}
 
-  /**
-   * Test the API connection
-   */
-  async testConnection(): Promise<boolean> {
-    if (!this.workerUrl) {
-      throw new Error('AI Worker endpoint not configured.');
-    }
+	/**
+	 * Generate code from a natural language prompt.
+	 */
+	async generateCode(request: KimiCodeGenerationRequest): Promise<KimiCodeGenerationResponse> {
+		const langHint = request.language ? ` in ${request.language}` : '';
+		const contextBlock = request.context
+			? `\n\nExisting code context:\n\`\`\`\n${request.context}\n\`\`\``
+			: '';
 
-    try {
-      const response = await this.client.post('/api/ai/generate-code', {
-        prompt: 'return "hello world"',
-        language: 'JavaScript',
-      });
+		const messages: WorkersAIMessage[] = [
+			{
+				role: 'system',
+				content:
+					'You are an expert software engineer. When asked to generate code, respond with ONLY the code block — no prose before or after. Use proper formatting and include helpful inline comments.',
+			},
+			{
+				role: 'user',
+				content: `Generate code${langHint} for the following:\n\n${request.prompt}${contextBlock}`,
+			},
+		];
 
-      return !!response.data?.data?.code;
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(`Connection failed: ${error.response?.status} - ${error.message}`);
-      }
-      throw error;
-    }
-  }
+		const raw = await this.callWorkersAI(messages, 8000, 0.3);
+		const code = stripMarkdownFences(raw);
 
-  /**
-   * Update AI endpoint
-   */
-  updateEndpoint(endpoint: string): void {
-    this.workerUrl = endpoint;
-    this.client.defaults.baseURL = endpoint;
-  }
+		return { code, explanation: 'Code generated by Kimi K2.6 via Cloudflare Workers AI' };
+	}
+
+	/**
+	 * Explain selected code.
+	 */
+	async explainCode(code: string): Promise<string> {
+		const messages: WorkersAIMessage[] = [
+			{
+				role: 'system',
+				content:
+					'You are a senior developer and technical writer. Explain code clearly and concisely, covering what it does, how it works, and any important patterns or caveats.',
+			},
+			{
+				role: 'user',
+				content: `Explain the following code:\n\n\`\`\`\n${code}\n\`\`\``,
+			},
+		];
+
+		return this.callWorkersAI(messages, 4000, 0.5);
+	}
+
+	/**
+	 * Refactor selected code.
+	 */
+	async refactorCode(code: string, language?: string): Promise<string> {
+		const langHint = language ? ` (${language})` : '';
+
+		const messages: WorkersAIMessage[] = [
+			{
+				role: 'system',
+				content:
+					'You are an expert software engineer. When refactoring code, respond with ONLY the improved code block — no explanations before or after.',
+			},
+			{
+				role: 'user',
+				content: `Refactor the following${langHint} code for better readability, performance, and best practices:\n\n\`\`\`\n${code}\n\`\`\``,
+			},
+		];
+
+		const raw = await this.callWorkersAI(messages, 8000, 0.2);
+		return stripMarkdownFences(raw);
+	}
+
+	/**
+	 * Generate test cases for selected code.
+	 */
+	async generateTests(code: string, language?: string): Promise<string> {
+		const langHint = language ? ` ${language}` : '';
+
+		const messages: WorkersAIMessage[] = [
+			{
+				role: 'system',
+				content:
+					'You are a test engineer. When generating tests, respond with ONLY the test code — no prose before or after. Cover happy paths, edge cases, and error conditions.',
+			},
+			{
+				role: 'user',
+				content: `Generate comprehensive${langHint} unit tests for the following code:\n\n\`\`\`\n${code}\n\`\`\``,
+			},
+		];
+
+		const raw = await this.callWorkersAI(messages, 8000, 0.3);
+		return stripMarkdownFences(raw);
+	}
+
+	/**
+	 * Fix bugs in selected code.
+	 */
+	async fixBugs(code: string, language?: string, errorMessage?: string): Promise<string> {
+		const langHint = language ? ` (${language})` : '';
+		const errorBlock = errorMessage
+			? `\n\nError message:\n${errorMessage}`
+			: '';
+
+		const messages: WorkersAIMessage[] = [
+			{
+				role: 'system',
+				content:
+					'You are a debugging expert. When fixing code, respond with ONLY the corrected code block — no explanations before or after.',
+			},
+			{
+				role: 'user',
+				content: `Fix the bugs in the following${langHint} code:${errorBlock}\n\n\`\`\`\n${code}\n\`\`\``,
+			},
+		];
+
+		const raw = await this.callWorkersAI(messages, 8000, 0.2);
+		return stripMarkdownFences(raw);
+	}
+
+	/**
+	 * Add documentation comments to selected code.
+	 */
+	async addDocumentation(code: string, language?: string): Promise<string> {
+		const langHint = language ? ` (${language})` : '';
+
+		const messages: WorkersAIMessage[] = [
+			{
+				role: 'system',
+				content:
+					'You are a technical writer. When adding documentation, respond with ONLY the documented code — no prose before or after. Use the appropriate doc format for the language (JSDoc, docstrings, etc.).',
+			},
+			{
+				role: 'user',
+				content: `Add comprehensive documentation comments to the following${langHint} code:\n\n\`\`\`\n${code}\n\`\`\``,
+			},
+		];
+
+		const raw = await this.callWorkersAI(messages, 8000, 0.3);
+		return stripMarkdownFences(raw);
+	}
+
+	/**
+	 * Test the Workers AI connection.
+	 */
+	async testConnection(): Promise<boolean> {
+		const messages: WorkersAIMessage[] = [
+			{ role: 'user', content: 'Reply with exactly: OK' },
+		];
+
+		const result = await this.callWorkersAI(messages, 10, 0);
+		return result.trim().length > 0;
+	}
+
+	/**
+	 * Update the custom worker endpoint (legacy support).
+	 */
+	updateEndpoint(endpoint: string): void {
+		this.workerUrl = endpoint;
+	}
+}
+
+/**
+ * Strip markdown code fences from a response string.
+ */
+function stripMarkdownFences(text: string): string {
+	// Remove ```lang ... ``` blocks, keeping only the inner content
+	const fenced = text.match(/^```[\w]*\n?([\s\S]*?)```\s*$/m);
+	if (fenced) {
+		return fenced[1].trim();
+	}
+	return text.trim();
 }

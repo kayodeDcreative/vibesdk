@@ -10,6 +10,7 @@
             ]
 		},
 		"tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
+		"ignoreDeprecations": "5.0",
 		"target": "ES2022",
 		"lib": ["ES2023"],
 		"module": "ESNext",

@@ -7,8 +7,8 @@
   "scripts": {
     "build": "tsc",
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "deploy:prod": "wrangler deploy --env production",
+    "deploy": "wrangler deploy --config ./wrangler.toml",
+    "deploy:prod": "wrangler deploy --config ./wrangler.toml --env production",
     "test": "vitest",
     "lint": "eslint src --fix",
     "format": "prettier --write 'src/**/*.ts'"

@@ -1,15 +1,39 @@
 {
-  "name": "kimi-cli",
-  "version": "0.1.0",
-  "description": "Kimi AI Command Line Interface",
+  "name": "pilabase-ai",
+  "version": "0.3.1",
+  "description": "Pilabase AI Command Line Interface with rich styling",
+  "private": false,
   "bin": {
-    "kimi-cli": "bin/kimi-cli.js"
+    "pilabase-ai": "bin/pilabase-ai.js",
+    "kimi-cli": "bin/pilabase-ai.js"
   },
   "scripts": {
-    "start": "node bin/kimi-cli.js"
+    "start": "node bin/pilabase-ai.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kayodedcreative/vibesdk.git"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "kimi",
+    "cloudflare",
+    "worker"
+  ],
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "axios": "^1.5.0",
-    "commander": "^11.0.0"
+    "boxen": "^8.0.1",
+    "chalk": "^4.1.2",
+    "commander": "^11.0.0",
+    "figures": "^6.1.0",
+    "gradient-string": "^3.0.0",
+    "ora": "^9.4.0",
+    "table": "^6.9.0",
+    "typer": "^1.1.0"
   }
 }

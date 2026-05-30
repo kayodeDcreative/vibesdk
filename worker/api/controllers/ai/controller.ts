@@ -53,7 +53,7 @@ export class AIController extends BaseController {
       fullPrompt += '\n\nReturn only the code without explanations or markdown formatting.';
 
       // Call Workers AI
-      const response = await (env.AI as any).run('@cf/kimi/kimi2.6', {
+      const response = await (env.AI as any).run('@cf/moonshotai/kimi-k2.6', {
         prompt: fullPrompt,
         max_tokens: 4096,
       });
@@ -97,7 +97,7 @@ export class AIController extends BaseController {
 
       const prompt = `Please provide a detailed explanation of the following code:\n\n${code}\n\nExplain what it does, any key functions, and important patterns.`;
 
-      const response = await (_env.AI as any).run('@cf/kimi/kimi2.6', {
+      const response = await (_env.AI as any).run('@cf/moonshotai/kimi-k2.6', {
         prompt,
         max_tokens: 2048,
       });
@@ -140,7 +140,7 @@ export class AIController extends BaseController {
 
       const prompt = `Please refactor the following ${language || ''} code to improve readability, performance, and maintainability. Return only the refactored code without explanations:\n\n${code}`;
 
-      const response = await (env.AI as any).run('@cf/kimi/kimi2.6', {
+      const response = await (env.AI as any).run('@cf/moonshotai/kimi-k2.6', {
         prompt,
         max_tokens: 4096,
       });
@@ -184,7 +184,7 @@ export class AIController extends BaseController {
 
       const prompt = `Generate comprehensive unit tests for the following ${language || ''} code. Return only the test code without explanations:\n\n${code}`;
 
-      const response = await (env.AI as any).run('@cf/kimi/kimi2.6', {
+      const response = await (env.AI as any).run('@cf/moonshotai/kimi-k2.6', {
         prompt,
         max_tokens: 4096,
       });

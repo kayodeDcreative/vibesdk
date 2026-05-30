@@ -24,17 +24,19 @@ export async function refactorCode(c: Context) {
 
     const prompt = `Please refactor the following ${body.language || ''} code to improve readability, performance, and maintainability. Return only the refactored code without explanations:\n\n${body.code}`;
 
-    const response = await (AI as any).run('@cf/kimi/kimi2.6', {
+    const response = await (AI as any).run('@cf/moonshotai/kimi-k2.6', {
       prompt,
       max_tokens: 4096,
     });
 
     const refactoredCode = (response as any).response || '';
+    const thinking = (response as any).thinking || (response as any).reasoning || undefined;
 
     return c.json({
       success: true,
       data: {
         code: refactoredCode.trim(),
+        thinking: thinking,
         suggestions: `Refactored ${body.language || ''} code for improved quality.`,
       },
     });

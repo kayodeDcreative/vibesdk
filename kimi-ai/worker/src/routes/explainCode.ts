@@ -23,17 +23,19 @@ export async function explainCode(c: Context) {
 
     const prompt = `Please provide a detailed explanation of the following code:\n\n${body.code}\n\nExplain what it does, any key functions, and important patterns.`;
 
-    const response = await (AI as any).run('@cf/kimi/kimi2.6', {
+    const response = await (AI as any).run('@cf/moonshotai/kimi-k2.6', {
       prompt,
       max_tokens: 2048,
     });
 
     const explanation = (response as any).response || '';
+    const thinking = (response as any).thinking || (response as any).reasoning || undefined;
 
     return c.json({
       success: true,
       data: {
         explanation: explanation.trim(),
+        thinking: thinking,
       },
     });
   } catch (error) {

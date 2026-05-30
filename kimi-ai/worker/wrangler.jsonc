@@ -4,63 +4,30 @@
  */
 {
   "name": "kimi-ai-worker",
-  "type": "service",
   "main": "dist/index.js",
   "compatibility_date": "2025-08-10",
   "compatibility_flags": ["nodejs_compat"],
 
-  /**
-   * Build configuration
-   */
   "build": {
     "command": "npm run build",
-    "cwd": "./",
-    "watch_paths": ["src/**/*.ts"]
+    "cwd": "./"
   },
 
-  /**
-   * Environment-specific configuration
-   */
-  "env": {
-    "development": {
-      "name": "kimi-ai-worker-dev",
-      "routes": [
-        {
-          "pattern": "kimi-ai-dev.example.workers.dev/*",
-          "zone_name": "example.workers.dev"
-        }
-      ]
-    },
-    "production": {
-      "name": "kimi-ai-worker",
-      "routes": [
-        {
-          "pattern": "kimi-ai.example.workers.dev/*",
-          "zone_name": "example.workers.dev"
-        }
-      ]
+  "ai": { "binding": "AI" },
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "kimi_ai_auth",
+      "database_id": "b1c55989-f50a-410b-ae2f-909e0ba89acd"
     }
-  },
+  ],
 
-  /**
-   * Bindings for AI operations
-   */
-  "ai": {
-    "binding": "AI"
-  },
-
-  /**
-   * Environment variables
-   */
   "vars": {
     "ENVIRONMENT": "production",
     "LOG_LEVEL": "info",
     "API_TIMEOUT": "60000"
   },
 
-  /**
-   * Observability
-   */
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1

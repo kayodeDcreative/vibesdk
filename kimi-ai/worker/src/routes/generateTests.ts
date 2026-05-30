@@ -24,17 +24,19 @@ export async function generateTests(c: Context) {
 
     const prompt = `Generate comprehensive unit tests for the following ${body.language || ''} code. Return only the test code without explanations:\n\n${body.code}`;
 
-    const response = await (AI as any).run('@cf/kimi/kimi2.6', {
+    const response = await (AI as any).run('@cf/moonshotai/kimi-k2.6', {
       prompt,
       max_tokens: 4096,
     });
 
     const testCode = (response as any).response || '';
+    const thinking = (response as any).thinking || (response as any).reasoning || undefined;
 
     return c.json({
       success: true,
       data: {
         tests: testCode.trim(),
+        thinking: thinking,
         coverage: 'Unit tests generated for provided code.',
       },
     });
